@@ -1,8 +1,200 @@
-[build]
-  command = "npm run build"
-  publish = "build"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baseball Performance App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Firebase SDKs (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-storage-compat.js"></script>
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+    </style>
+</head>
+<body class="bg-gray-900 text-white">
+    <div id="app-container">
+        <div class="flex items-center justify-center h-screen">
+            <div class="animate-spin rounded-full h-32 w-32 border-t-2 border-b-2 border-blue-500"></div>
+            <p class="ml-4">Loading App...</p>
+        </div>
+    </div>
+
+    <script>
+        window.addEventListener('load', () => {
+            // --- App State ---
+            let state = {
+                user: null,
+                view: 'login', // login, coach, player
+                allPlayers: [],
+                selectedPlayerProfile: null,
+                coachId: null,
+                appId: typeof __app_id !== 'undefined' ? __app_id : 'default-app-id',
+            };
+
+            // --- Firebase Configuration ---
+            const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_AUTH_DOMAIN",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+
+            // --- Firebase Initialization ---
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            const auth = firebase.auth();
+            const db = firebase.firestore();
+            const storage = firebase.storage();
+
+            const appContainer = document.getElementById('app-container');
+
+            // --- Main Render Function ---
+            function render() {
+                if (state.view === 'login') {
+                    renderLoginScreen();
+                } else if (state.view === 'coach') {
+                    renderCoachView();
+                } else if (state.view === 'player' && state.selectedPlayerProfile) {
+                    renderPlayerView();
+                }
+            }
+
+            // --- Login Screen ---
+            function renderLoginScreen() {
+                appContainer.innerHTML = `
+                    <div class="bg-gray-900 text-white min-h-screen flex flex-col items-center justify-center p-4">
+                        <h1 class="text-4xl font-bold text-blue-400 mb-8">Playbook Pro</h1>
+                        <div class="w-full max-w-md bg-gray-800 p-8 rounded-lg shadow-2xl">
+                            <h2 class="text-2xl font-semibold mb-6 text-center">Login</h2>
+                            <div id="error-message" class="text-red-500 text-center mb-4"></div>
+                            <div class="space-y-4">
+                                <div class="border border-gray-600 p-4 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-blue-400">Coach Login</h3>
+                                    <input id="password-input" type="password" placeholder="Master Password" class="bg-gray-700 p-2 rounded w-full mt-2"/>
+                                    <button id="coach-login-btn" class="w-full mt-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors">Login as Coach</button>
+                                </div>
+                                <div class="border border-gray-600 p-4 rounded-lg">
+                                    <h3 class="text-lg font-semibold text-green-400">Player Login</h3>
+                                    <select id="player-select" class="bg-gray-700 p-2 rounded w-full mt-2">
+                                        <option value="">-- Select Your Name --</option>
+                                        ${state.allPlayers.map(p => `<option value="${p.id}">${p.name}</option>`).join('')}
+                                    </select>
+                                    <div id="player-password-container" class="hidden">
+                                        <input id="player-password-input" type="password" placeholder="Player Password" class="bg-gray-700 p-2 rounded w-full mt-2"/>
+                                        <button id="player-login-btn" class="w-full mt-2 bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded transition-colors">Login as Player</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+
+                document.getElementById('coach-login-btn').addEventListener('click', () => {
+                    const password = document.getElementById('password-input').value;
+                    if (password === 'Isaac') {
+                        state.view = 'coach';
+                        render();
+                    } else {
+                        document.getElementById('error-message').innerText = 'Incorrect master password.';
+                    }
+                });
+
+                document.getElementById('player-select').addEventListener('change', (e) => {
+                    const container = document.getElementById('player-password-container');
+                    if (e.target.value) {
+                        container.classList.remove('hidden');
+                    } else {
+                        container.classList.add('hidden');
+                    }
+                });
+
+                document.getElementById('player-login-btn').addEventListener('click', () => {
+                    const selectedPlayerId = document.getElementById('player-select').value;
+                    const password = document.getElementById('player-password-input').value;
+                    const player = state.allPlayers.find(p => p.id === selectedPlayerId);
+                    if (player && player.password === password) {
+                        state.selectedPlayerProfile = player;
+                        state.view = 'player';
+                        render();
+                    } else {
+                        document.getElementById('error-message').innerText = 'Incorrect password for selected player.';
+                    }
+                });
+            }
+
+            // --- Coach View (Simplified Stub) ---
+            function renderCoachView() {
+                // This is a simplified version. The full implementation would be much larger.
+                appContainer.innerHTML = `
+                    <div class="text-center p-8">
+                        <h1 class="text-3xl font-bold text-blue-400">Coach Dashboard</h1>
+                        <p class="mt-4">Welcome, Coach! Full coach functionality would be built out here.</p>
+                        <button id="logout-btn" class="mt-8 bg-gray-600 p-2 rounded">Logout</button>
+                    </div>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    state.view = 'login';
+                    render();
+                });
+            }
+
+            // --- Player View (Simplified Stub) ---
+            function renderPlayerView() {
+                 // This is a simplified version. The full implementation would be much larger.
+                appContainer.innerHTML = `
+                    <div class="text-center p-8">
+                        <h1 class="text-3xl font-bold text-green-400">Welcome, ${state.selectedPlayerProfile.name}</h1>
+                        <p class="mt-4">Your personalized dashboard and programs would be displayed here.</p>
+                        <button id="logout-btn" class="mt-8 bg-gray-600 p-2 rounded">Logout</button>
+                    </div>
+                `;
+                document.getElementById('logout-btn').addEventListener('click', () => {
+                    state.view = 'login';
+                    state.selectedPlayerProfile = null;
+                    render();
+                });
+            }
+
+            // --- Initial Authentication and Data Fetching ---
+            auth.onAuthStateChanged(async (currentUser) => {
+                if (currentUser) {
+                    state.user = currentUser;
+                } else {
+                    try {
+                        const userCredential = await auth.signInAnonymously();
+                        state.user = userCredential.user;
+                    } catch (error) {
+                        console.error("Error signing in anonymously:", error);
+                    }
+                }
+                state.coachId = state.user ? state.user.uid : 'default-coach';
+
+                if (state.coachId !== 'default-coach') {
+                    db.collection(`artifacts/${state.appId}/users/${state.coachId}/players`).onSnapshot((querySnapshot) => {
+                        state.allPlayers = [];
+                        querySnapshot.forEach((doc) => {
+                            state.allPlayers.push({ id: doc.id, ...doc.data() });
+                        });
+                        // Re-render if the view is login, to update the player list
+                        if (state.view === 'login') {
+                            render();
+                        }
+                    });
+                } else {
+                    render();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

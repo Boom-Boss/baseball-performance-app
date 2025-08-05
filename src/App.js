@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, collection, addDoc, query, where, onSnapshot, serverTimestamp, orderBy, writeBatch, deleteDoc } from 'firebase/firestore';
@@ -907,6 +907,7 @@ function DrillLibrary({ coachId, appId, isPlayerView = false }) {
             const container = document.getElementById('root');
             const root = ReactDOM.createRoot(container);
             root.render(<App />);
+        }
 
         window.addEventListener('load', startApp);
     </script>

@@ -909,6 +909,3 @@ function DrillLibrary({ coachId, appId, isPlayerView = false }) {
             root.render(<App />);
 
         window.addEventListener('load', startApp);
-    </script>
-</body>
-</html>

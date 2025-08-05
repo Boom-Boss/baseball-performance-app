@@ -6,7 +6,7 @@ import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line, ComposedChart } from 'recharts';
 
 // --- Firebase Configuration ---
-const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "YOUR_AUTH_DOMAIN",
     projectId: "YOUR_PROJECT_ID",
@@ -54,7 +54,7 @@ export default function App() {
     const [allPlayers, setAllPlayers] = useState([]);
 
     const coachId = user ? user.uid : 'default-coach';
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+    const appId = 'default-app-id'; // Replace with a dynamic ID if needed
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -904,8 +904,6 @@ function DrillLibrary({ coachId, appId, isPlayerView = false }) {
     );
 }
             
-            const container = document.getElementById('root');
-            const root = ReactDOM.createRoot(container);
-            root.render(<App />);
-
-        window.addEventListener('load', startApp);
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+root.render(<App />);

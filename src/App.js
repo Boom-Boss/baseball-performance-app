@@ -907,7 +907,7 @@ function DrillLibrary({ coachId, appId, isPlayerView = false }) {
             const container = document.getElementById('root');
             const root = ReactDOM.createRoot(container);
             root.render(<App />);
-        }
+}
 
         window.addEventListener('load', startApp);
     </script>
